@@ -1,0 +1,58 @@
+trigger: none
+  
+variables: 
+- name: subscriptionCreationServiceConnection
+  value: 'SERVICECONNECTIONNAME'
+
+parameters:
+- name: Identifier
+  displayName: What is the identifying name of the Azure Landing Zone? (short name)
+  type: string
+- name: DisplayName
+  displayName: What is the display name of the Azure Landing Zone? (long name)
+  type: string
+- name: ManagementGroupName
+  displayName: Azure Management Group Name
+  type: string
+- name: BillingScope
+  displayName: Azure Billing Scope, Example /billingAccounts/123456/enrollmentAccounts/123456
+  type: string
+- name: Workload
+  displayName: Azure Billing Scope, Example /billingAccounts/123456/enrollmentAccounts/123456
+  type: string
+  values: 
+  - Production
+  - DevTest
+- name: Environment
+  displayName: Environment?
+  type: string
+  default: Sandbox
+  values:
+  - sbx
+  - dev
+  - acc
+  - prod
+
+stages:
+  - stage: provision
+    displayName: 'Subscription Vending'
+    jobs:
+    - job: subscriptionCreate
+      displayName: 'Create Azure Subscription'
+      steps:
+      - task: AzurePowerShell@5
+        displayName: 'Create Azure Subscription'
+        name: CreateSub
+        inputs:
+          azureSubscription: $(subscriptionCreationServiceConnection)
+          ScriptType: 'FilePath'
+          azurePowerShellVersion: LatestVersion
+          pwsh: true
+          ScriptPath: 'New-AzureSubscription.ps1'
+          ScriptArguments: >
+            -Identifier '${{ parameters.Identifier }}'
+            -BillingScope '${{ parameters.BillingScope }}'
+            -Workload 'Production'
+            -ManagementGroupId '/providers/Microsoft.Management/managementGroups/${{ parameters.ManagementGroupName }}'
+            -EnvironmentShortName '$(variableOutput.environmentShortName)'
+            -DisplayName '${{ parameters.DisplayName }}'
